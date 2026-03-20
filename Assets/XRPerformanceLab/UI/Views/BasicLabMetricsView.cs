@@ -17,7 +17,16 @@ namespace XRPerformanceLab.UI.Views
         public void RenderMetrics(PerformanceMetrics metrics)
         {
             if (fpsText != null)
+            {
                 fpsText.text = $"FPS: {metrics.Fps:F1}";
+
+                if (metrics.Fps > 72)
+                    fpsText.color = Color.green;
+                else if (metrics.Fps > 60)
+                    fpsText.color = Color.yellow;
+                else
+                    fpsText.color = Color.red;
+            }
 
             if (frameTimeText != null)
                 frameTimeText.text = $"Frame: {metrics.FrameTimeMs:F2} ms";
