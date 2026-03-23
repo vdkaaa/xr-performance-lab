@@ -4,9 +4,9 @@ namespace XRPerformanceLab.Core.Interfaces
     {
         string Id { get; }
         string DisplayName { get; }
-        bool IsActive { get; }
 
-        void Activate();
-        void Deactivate();
+        void Setup();
+        void Run();
+        void Teardown();
     }
 }
