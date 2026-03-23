@@ -9,13 +9,10 @@ namespace XRPerformanceLab.Experiments.RenderScale
     {
         private readonly UniversalRenderPipelineAsset _pipelineAsset;
         private readonly float _targetRenderScale;
-
         private float _originalRenderScale;
-        private bool _hasStoredOriginalValue;
 
         public string Id { get; }
         public string DisplayName { get; }
-        public bool IsActive { get; private set; }
 
         public RenderScaleExperiment(
             string id,
@@ -41,34 +38,22 @@ namespace XRPerformanceLab.Experiments.RenderScale
             _targetRenderScale = targetRenderScale;
         }
 
-        public void Activate()
+        public void Setup()
         {
-            if (IsActive)
-                return;
-
-            if (!_hasStoredOriginalValue)
-            {
-                _originalRenderScale = _pipelineAsset.renderScale;
-                _hasStoredOriginalValue = true;
-            }
-
-            _pipelineAsset.renderScale = _targetRenderScale;
-            IsActive = true;
-
-            Debug.Log($"[RenderScaleExperiment] Activated '{DisplayName}' -> Render Scale: {_targetRenderScale:F2}");
+            _originalRenderScale = _pipelineAsset.renderScale;
+            Debug.Log($"[RenderScaleExperiment] Setup '{DisplayName}' -> Saved original render scale: {_originalRenderScale:F2}");
         }
 
-        public void Deactivate()
+        public void Run()
         {
-            if (!IsActive)
-                return;
+            _pipelineAsset.renderScale = _targetRenderScale;
+            Debug.Log($"[RenderScaleExperiment] Run '{DisplayName}' -> Render Scale: {_targetRenderScale:F2}");
+        }
 
-            if (_hasStoredOriginalValue)
-                _pipelineAsset.renderScale = _originalRenderScale;
-
-            IsActive = false;
-
-            Debug.Log($"[RenderScaleExperiment] Deactivated '{DisplayName}' -> Restored Render Scale: {_originalRenderScale:F2}");
+        public void Teardown()
+        {
+            _pipelineAsset.renderScale = _originalRenderScale;
+            Debug.Log($"[RenderScaleExperiment] Teardown '{DisplayName}' -> Restored Render Scale: {_originalRenderScale:F2}");
         }
     }
 }

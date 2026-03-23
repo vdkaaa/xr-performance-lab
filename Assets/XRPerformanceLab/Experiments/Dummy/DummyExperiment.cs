@@ -7,24 +7,20 @@ namespace XRPerformanceLab.Experiments.Dummy
     {
         public string Id => "dummy";
         public string DisplayName => "Dummy Experiment";
-        public bool IsActive { get; private set; }
 
-        public void Activate()
+        public void Setup()
         {
-            if (IsActive)
-                return;
-
-            IsActive = true;
-            Debug.Log("[DummyExperiment] Activated");
+            Debug.Log("[DummyExperiment] Setup");
         }
 
-        public void Deactivate()
+        public void Run()
         {
-            if (!IsActive)
-                return;
+            Debug.Log("[DummyExperiment] Run");
+        }
 
-            IsActive = false;
-            Debug.Log("[DummyExperiment] Deactivated");
+        public void Teardown()
+        {
+            Debug.Log("[DummyExperiment] Teardown");
         }
     }
 }

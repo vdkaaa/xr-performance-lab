@@ -13,13 +13,10 @@ namespace XRPerformanceLab.Experiments.Transparency
     public sealed class TransparencyExperiment : IExperiment
     {
         private readonly GameObject[] _transparentObjects;
-
         private bool[] _originalActiveStates;
-        private bool _hasStoredOriginalStates;
 
         public string Id { get; }
         public string DisplayName { get; }
-        public bool IsActive { get; private set; }
 
         public TransparencyExperiment(
             string id,
@@ -37,26 +34,30 @@ namespace XRPerformanceLab.Experiments.Transparency
             _transparentObjects = transparentObjects;
         }
 
-        public void Activate()
+        public void Setup()
         {
-            if (IsActive)
-                return;
-
             if (_transparentObjects == null || _transparentObjects.Length == 0)
             {
-                Debug.LogWarning($"[TransparencyExperiment] '{DisplayName}' has no transparent objects assigned. Skipping activation.");
+                Debug.LogWarning($"[TransparencyExperiment] Setup '{DisplayName}' -> No transparent objects assigned.");
                 return;
             }
 
-            if (!_hasStoredOriginalStates)
+            _originalActiveStates = new bool[_transparentObjects.Length];
+            for (int i = 0; i < _transparentObjects.Length; i++)
             {
-                _originalActiveStates = new bool[_transparentObjects.Length];
-                for (int i = 0; i < _transparentObjects.Length; i++)
-                {
-                    if (_transparentObjects[i] != null)
-                        _originalActiveStates[i] = _transparentObjects[i].activeSelf;
-                }
-                _hasStoredOriginalStates = true;
+                if (_transparentObjects[i] != null)
+                    _originalActiveStates[i] = _transparentObjects[i].activeSelf;
+            }
+
+            Debug.Log($"[TransparencyExperiment] Setup '{DisplayName}' -> Saved {_transparentObjects.Length} object states");
+        }
+
+        public void Run()
+        {
+            if (_transparentObjects == null || _transparentObjects.Length == 0)
+            {
+                Debug.LogWarning($"[TransparencyExperiment] Run '{DisplayName}' -> No transparent objects assigned.");
+                return;
             }
 
             // Enable all transparent objects to maximize overdraw
@@ -70,35 +71,25 @@ namespace XRPerformanceLab.Experiments.Transparency
                 }
             }
 
-            IsActive = true;
-
-            Debug.Log($"[TransparencyExperiment] Activated '{DisplayName}' -> Enabled {enabledCount} transparent objects (max overdraw)");
+            Debug.Log($"[TransparencyExperiment] Run '{DisplayName}' -> Enabled {enabledCount} transparent objects (max overdraw)");
         }
 
-        public void Deactivate()
+        public void Teardown()
         {
-            if (!IsActive)
-                return;
-
             if (_transparentObjects == null || _transparentObjects.Length == 0)
             {
-                Debug.LogWarning($"[TransparencyExperiment] '{DisplayName}' has no transparent objects assigned. Skipping deactivation.");
+                Debug.LogWarning($"[TransparencyExperiment] Teardown '{DisplayName}' -> No transparent objects assigned.");
                 return;
             }
 
-            if (_hasStoredOriginalStates)
+            // Restore original active states
+            for (int i = 0; i < _transparentObjects.Length; i++)
             {
-                // Restore original active states
-                for (int i = 0; i < _transparentObjects.Length; i++)
-                {
-                    if (_transparentObjects[i] != null && i < _originalActiveStates.Length)
-                        _transparentObjects[i].SetActive(_originalActiveStates[i]);
-                }
+                if (_transparentObjects[i] != null && _originalActiveStates != null && i < _originalActiveStates.Length)
+                    _transparentObjects[i].SetActive(_originalActiveStates[i]);
             }
 
-            IsActive = false;
-
-            Debug.Log($"[TransparencyExperiment] Deactivated '{DisplayName}' -> Restored original object states");
+            Debug.Log($"[TransparencyExperiment] Teardown '{DisplayName}' -> Restored original object states");
         }
     }
 }

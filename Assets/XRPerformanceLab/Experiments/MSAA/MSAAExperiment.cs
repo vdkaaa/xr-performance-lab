@@ -12,13 +12,10 @@ namespace XRPerformanceLab.Experiments.MSAA
     public sealed class MSAAExperiment : IExperiment
     {
         private readonly int _targetMSAALevel;
-
         private int _originalMSAALevel;
-        private bool _hasStoredOriginalValue;
 
         public string Id { get; }
         public string DisplayName { get; }
-        public bool IsActive { get; private set; }
 
         public MSAAExperiment(
             string id,
@@ -39,34 +36,22 @@ namespace XRPerformanceLab.Experiments.MSAA
             _targetMSAALevel = targetMSAALevel;
         }
 
-        public void Activate()
+        public void Setup()
         {
-            if (IsActive)
-                return;
-
-            if (!_hasStoredOriginalValue)
-            {
-                _originalMSAALevel = QualitySettings.antiAliasing;
-                _hasStoredOriginalValue = true;
-            }
-
-            QualitySettings.antiAliasing = _targetMSAALevel;
-            IsActive = true;
-
-            Debug.Log($"[MSAAExperiment] Activated '{DisplayName}' -> MSAA Level: {_targetMSAALevel}x");
+            _originalMSAALevel = QualitySettings.antiAliasing;
+            Debug.Log($"[MSAAExperiment] Setup '{DisplayName}' -> Saved original MSAA level: {_originalMSAALevel}x");
         }
 
-        public void Deactivate()
+        public void Run()
         {
-            if (!IsActive)
-                return;
+            QualitySettings.antiAliasing = _targetMSAALevel;
+            Debug.Log($"[MSAAExperiment] Run '{DisplayName}' -> MSAA Level: {_targetMSAALevel}x");
+        }
 
-            if (_hasStoredOriginalValue)
-                QualitySettings.antiAliasing = _originalMSAALevel;
-
-            IsActive = false;
-
-            Debug.Log($"[MSAAExperiment] Deactivated '{DisplayName}' -> Restored MSAA Level: {_originalMSAALevel}x");
+        public void Teardown()
+        {
+            QualitySettings.antiAliasing = _originalMSAALevel;
+            Debug.Log($"[MSAAExperiment] Teardown '{DisplayName}' -> Restored MSAA Level: {_originalMSAALevel}x");
         }
     }
 }

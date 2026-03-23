@@ -13,13 +13,10 @@ namespace XRPerformanceLab.Experiments.CPUThrottle
     public sealed class CPUThrottleExperiment : IExperiment
     {
         private readonly int _targetFrameRate;
-
         private int _originalFrameRate;
-        private bool _hasStoredOriginalValue;
 
         public string Id { get; }
         public string DisplayName { get; }
-        public bool IsActive { get; private set; }
 
         public CPUThrottleExperiment(
             string id,
@@ -40,36 +37,24 @@ namespace XRPerformanceLab.Experiments.CPUThrottle
             _targetFrameRate = targetFrameRate;
         }
 
-        public void Activate()
+        public void Setup()
         {
-            if (IsActive)
-                return;
-
-            if (!_hasStoredOriginalValue)
-            {
-                _originalFrameRate = Application.targetFrameRate;
-                _hasStoredOriginalValue = true;
-            }
-
-            Application.targetFrameRate = _targetFrameRate;
-            IsActive = true;
-
-            string rateDisplay = _targetFrameRate == -1 ? "Unlimited" : $"{_targetFrameRate} FPS";
-            Debug.Log($"[CPUThrottleExperiment] Activated '{DisplayName}' -> Target Frame Rate: {rateDisplay}");
+            _originalFrameRate = Application.targetFrameRate;
+            Debug.Log($"[CPUThrottleExperiment] Setup '{DisplayName}' -> Saved original frame rate: {(_originalFrameRate == -1 ? "Unlimited" : $"{_originalFrameRate} FPS")}");
         }
 
-        public void Deactivate()
+        public void Run()
         {
-            if (!IsActive)
-                return;
+            Application.targetFrameRate = _targetFrameRate;
+            string rateDisplay = _targetFrameRate == -1 ? "Unlimited" : $"{_targetFrameRate} FPS";
+            Debug.Log($"[CPUThrottleExperiment] Run '{DisplayName}' -> Target Frame Rate: {rateDisplay}");
+        }
 
-            if (_hasStoredOriginalValue)
-                Application.targetFrameRate = _originalFrameRate;
-
-            IsActive = false;
-
+        public void Teardown()
+        {
+            Application.targetFrameRate = _originalFrameRate;
             string rateDisplay = _originalFrameRate == -1 ? "Unlimited" : $"{_originalFrameRate} FPS";
-            Debug.Log($"[CPUThrottleExperiment] Deactivated '{DisplayName}' -> Restored Target Frame Rate: {rateDisplay}");
+            Debug.Log($"[CPUThrottleExperiment] Teardown '{DisplayName}' -> Restored Target Frame Rate: {rateDisplay}");
         }
     }
 }

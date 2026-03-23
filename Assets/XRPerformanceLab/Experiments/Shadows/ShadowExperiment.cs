@@ -9,13 +9,10 @@ namespace XRPerformanceLab.Experiments.Shadows
     {
         private readonly UniversalRenderPipelineAsset _pipelineAsset;
         private readonly float _targetShadowDistance;
-
         private float _originalShadowDistance;
-        private bool _hasStoredOriginalValue;
 
         public string Id { get; }
         public string DisplayName { get; }
-        public bool IsActive { get; private set; }
 
         public ShadowExperiment(
             string id,
@@ -39,34 +36,22 @@ namespace XRPerformanceLab.Experiments.Shadows
             _targetShadowDistance = targetShadowDistance;
         }
 
-        public void Activate()
+        public void Setup()
         {
-            if (IsActive)
-                return;
-
-            if (!_hasStoredOriginalValue)
-            {
-                _originalShadowDistance = _pipelineAsset.shadowDistance;
-                _hasStoredOriginalValue = true;
-            }
-
-            _pipelineAsset.shadowDistance = _targetShadowDistance;
-            IsActive = true;
-
-            Debug.Log($"[ShadowExperiment] Activated '{DisplayName}' -> ShadowDistance: {_targetShadowDistance}");
+            _originalShadowDistance = _pipelineAsset.shadowDistance;
+            Debug.Log($"[ShadowExperiment] Setup '{DisplayName}' -> Saved original shadow distance: {_originalShadowDistance}");
         }
 
-        public void Deactivate()
+        public void Run()
         {
-            if (!IsActive)
-                return;
+            _pipelineAsset.shadowDistance = _targetShadowDistance;
+            Debug.Log($"[ShadowExperiment] Run '{DisplayName}' -> Shadow Distance: {_targetShadowDistance}");
+        }
 
-            if (_hasStoredOriginalValue)
-                _pipelineAsset.shadowDistance = _originalShadowDistance;
-
-            IsActive = false;
-
-            Debug.Log($"[ShadowExperiment] Deactivated '{DisplayName}' -> Restored: {_originalShadowDistance}");
+        public void Teardown()
+        {
+            _pipelineAsset.shadowDistance = _originalShadowDistance;
+            Debug.Log($"[ShadowExperiment] Teardown '{DisplayName}' -> Restored Shadow Distance: {_originalShadowDistance}");
         }
     }
 }
