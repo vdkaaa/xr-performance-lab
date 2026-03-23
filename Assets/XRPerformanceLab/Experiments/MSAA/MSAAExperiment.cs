@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using XRPerformanceLab.Core.Interfaces;
 
-namespace XRPerformanceLab.Experiments
+namespace XRPerformanceLab.Experiments.MSAA
 {
     /// <summary>
     /// Tests the performance impact of Multi-Sample Anti-Aliasing (MSAA) quality levels.

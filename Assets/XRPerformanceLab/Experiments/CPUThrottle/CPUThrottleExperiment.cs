@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using XRPerformanceLab.Core.Interfaces;
 
-namespace XRPerformanceLab.Experiments
+namespace XRPerformanceLab.Experiments.CPUThrottle
 {
     /// <summary>
     /// Tests the performance impact of CPU budget constraints via target frame rate limiting.

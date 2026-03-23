@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using XRPerformanceLab.Core.Interfaces;
 
-namespace XRPerformanceLab.Experiments
+namespace XRPerformanceLab.Experiments.Transparency
 {
     /// <summary>
     /// Tests the performance impact of transparent object overdraw and GPU fill rate.
