@@ -1,117 +1,171 @@
 # XR Performance Lab
 
-A modular Unity XR lab designed to study rendering pipelines, profiling workflows, and performance optimization techniques for both PCVR and standalone VR devices such as Meta Quest.
+> A modular, interface-driven performance testing system built in Unity 6 (URP) for XR applications.  
+> Designed to run reproducible experiments that isolate and measure the impact of individual rendering variables.
+
+![Unity](https://img.shields.io/badge/Unity-6000.x-black?logo=unity)
+![URP](https://img.shields.io/badge/Pipeline-URP-blue)
+![Platform](https://img.shields.io/badge/Platform-PCVR%20%7C%20Quest-blueviolet)
+![Status](https://img.shields.io/badge/Status-Active%20Development-green)
 
 ---
 
-# Overview
-
-XR Performance Lab is a technical sandbox built to explore how XR applications behave under different rendering and performance conditions.
-
-Instead of focusing on gameplay, the goal of this project is to create a controlled environment for experimenting with and understanding real-time performance in XR systems.
-
-The lab allows developers to observe and measure how specific variables affect performance.
-
-Examples include:
-
-- Render Scale
-- MSAA
-- Shadows
-- Transparency / Overdraw
-- GPU Instancing
-- CPU stress scenarios
+![Demo](Docs/demo.gif)
 
 ---
 
-# Motivation
+## What This Is
 
-XR applications operate under strict performance constraints.
+XR applications run under strict real-time constraints — 72, 80, or 90+ FPS depending on the device. Hitting those targets requires understanding exactly how each rendering decision affects the CPU, GPU, and render thread.
 
-Maintaining stable framerate targets (72, 80, 90+ FPS depending on device) requires understanding the interaction between:
-
-- CPU workload
-- Render thread behavior
-- GPU workload
-- XR runtime pipelines
-- rendering settings and scene complexity
-
-This project exists as a structured environment to study those interactions and document the results.
+XR Performance Lab is a controlled environment for studying those interactions. It runs structured experiments, holds each configuration for a measurable window, then restores the original state — giving you clean, comparable data for every variable you test.
 
 ---
 
-# Technical Focus
+## System Architecture
 
-This repository focuses on the following XR engineering topics:
+The project is built around a clean layered architecture with full separation of concerns.
 
-- CPU vs GPU bottleneck analysis
-- Render thread behavior
-- Draw calls, batching and GPU instancing
-- Fill rate and render scale impact
-- Shadow cost in XR
-- Transparency and overdraw
-- Profiling workflows in Unity
+```
+Core/
+├── Interfaces/          → IExperiment, IExperimentRunner, IExperimentRegistry
+├── Services/            → ExperimentRunner, ExperimentRegistry
+└── Utilities/           → XRLabBootstrap, PlayModeValidator
 
-The goal is to run reproducible experiments and document their results.
+Experiments/
+├── MSAA/                → MSAAExperiment
+├── CPUThrottle/         → CPUThrottleExperiment
+├── RenderScale/         → RenderScaleExperiment
+├── Shadows/             → ShadowExperiment
+└── Transparency/        → TransparencyExperiment
 
----
+Metrics/                 → PerformanceMetrics, metric providers
+UI/
+├── Panels/              → ExperimentControlPanelController, LabMetricsPanelController
+└── Views/               → BasicExperimentControlView, BasicLabMetricsView, ILabPanelView
+```
 
-# Architecture Principles
+**Key design decisions:**
 
-The project is built following clean and modular architecture principles.
-
-Key design goals include:
-
-- clear separation of responsibilities
-- interface-driven systems
-- modular experiment modules
-- reproducible test scenarios
-- maintainable and scalable structure
-
-The system is organized so that new experiments can be added without modifying core systems.
-
----
-
-# Project Structure
-
----
-Assets/XRPerformanceLab/
-  Core/
-  Experiments/
-  Metrics/
-  UI/
-  Scenes/
-  Prefabs/
-  Materials/
-  Docs/
+- Every experiment implements `IExperiment` — `Setup()` → `Run()` → `Teardown()`
+- `Teardown()` is guaranteed to run via `try/finally` even if `Run()` throws
+- The UI layer only talks to `IExperimentRunner` and `IExperimentRegistry` — never to experiments directly
+- `XRLabBootstrap` is the single wiring point — no static singletons anywhere
+- New experiments can be added without modifying any existing code
 
 ---
 
-# Planned Features
+## Experiment Runner Flow
 
-The laboratory will include:
+```
+Bootstrap.Awake()
+    └── Registers all experiments into IExperimentRegistry
 
-- modular experiment runner
-- performance metrics overlay
-- XR-ready testing scene
-- experiment modules affecting rendering variables
-- profiling documentation
-- PCVR vs Quest standalone comparisons
-
----
-
-# Repository Status
-
-This repository is currently in active development.
-
-Initial milestones include:
-
-- base architecture
-- experiment system
-- performance metrics overlay
-- first set of rendering experiments
+PlayModeValidator / UI
+    └── Calls IExperimentRunner.RunExperiment(experiment)
+            └── Setup()   → saves current Unity state
+            └── Run()     → applies the test configuration
+            └── Hold      → waits N seconds for metrics to stabilize
+            └── Teardown()→ restores original state unconditionally
+            └── OnExperimentCompleted event fired
+```
 
 ---
 
-# Author
+## Experiments
 
-Diego Santander Sepúlveda
+| Experiment | Variable Tested | Values |
+|---|---|---|
+| `MSAAExperiment` | `QualitySettings.antiAliasing` | 0x, 2x, 4x, 8x |
+| `CPUThrottleExperiment` | `Application.targetFrameRate` | Unlimited, 30, 45, 72, 90 FPS |
+| `RenderScaleExperiment` | `XRSettings.renderViewportScale` | 0.50x, 0.75x, 1.00x, 1.50x |
+| `ShadowExperiment` | `QualitySettings.shadowDistance` | 0m, 50m, 100m, 150m |
+| `TransparencyExperiment` | Transparent object overdraw | Off / Max overdraw |
+
+18 experiment instances registered and runnable from Play Mode.
+
+---
+
+## Metrics Overlay
+
+Live metrics displayed during every experiment run:
+
+- FPS
+- Frame time (ms)
+- Batch count
+- Triangle count
+- Vertex count
+
+---
+
+## Getting Started
+
+**Requirements**
+- Unity 6 (6000.x)
+- Universal Render Pipeline (URP)
+- OpenXR or XR Plugin Management (for device builds)
+
+**Run in Editor**
+1. Clone the repo
+2. Open in Unity 6
+3. Open `Assets/XRPerformanceLab/Scenes/` and load the lab scene
+4. Press Play
+5. Use the **Experiment Validator** panel (top-right) to select and run any experiment
+6. Watch metrics update in the overlay (top-left)
+
+**Hold duration** (how long each experiment stays active before restoring) is configurable on the `ExperimentRunner` component. Default: 3 seconds.
+
+---
+
+## Adding a New Experiment
+
+1. Create a class implementing `IExperiment`
+2. Implement `Setup()`, `Run()`, `Teardown()`, `Id`, and `DisplayName`
+3. Register an instance in `XRLabBootstrap.Awake()`
+4. No other files need modification
+
+```csharp
+public sealed class MyExperiment : IExperiment
+{
+    public string Id => "my-experiment";
+    public string DisplayName => "My Experiment";
+
+    private int _originalValue;
+
+    public void Setup()   => _originalValue = QualitySettings.someValue;
+    public void Run()     => QualitySettings.someValue = _testValue;
+    public void Teardown()=> QualitySettings.someValue = _originalValue;
+}
+```
+
+---
+
+## Technical Focus Areas
+
+- CPU vs GPU bottleneck identification
+- Render thread behavior under XR constraints
+- Fill rate and render scale impact on standalone VR
+- Shadow rendering cost in forward+ URP
+- Transparency and fragment shader overdraw
+- Batching, draw calls, and GPU instancing analysis
+- Reproducible profiling methodology in Unity
+
+---
+
+## Roadmap
+
+- [ ] FPS history graph (line chart reacting to experiment runs)
+- [ ] GPU frame time via `ProfilerRecorder`
+- [ ] JSON results export per experiment run
+- [ ] PCVR vs Quest standalone comparison mode
+- [ ] GitHub Actions CI build check
+
+---
+
+## Author
+
+**Diego Santander Sepúlveda**  
+XR Developer · Unity Developer · Game Developer
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Diego%20Santander-blue?logo=linkedin)](https://www.linkedin.com/in/diego-santander-sep%C3%BAlveda-748423341/)
+[![GitHub](https://img.shields.io/badge/GitHub-vdkaaa-black?logo=github)](https://github.com/vdkaaa)
