@@ -1,0 +1,157 @@
+# XR Performance Lab — Cursor Rules
+# Unity XR Performance Testing System
+# ─────────────────────────────────────────────────────────────
+
+## PROJECT CONTEXT
+
+This is a Unity C# project for profiling and benchmarking XR (VR/AR) applications.
+It is designed as a **portfolio-quality technical artifact** and a real developer tool.
+Primary target: Meta Quest 2/3 via OpenXR. Secondary: PICO 4, PC VR.
+
+Architecture layers (in dependency order):
+  Core → Experiments → Metrics → UI
+
+The Core layer defines interfaces. All other layers depend only on interfaces, never
+on concrete implementations.
+
+---
+
+## ARCHITECTURE RULES
+
+- NEVER add business logic to MonoBehaviour classes directly.
+  MonoBehaviours are only allowed in: Bootstrap, UI Controllers, and scene entry points.
+
+- NEVER create static singletons or ServiceLocator patterns.
+  Use constructor injection or Unity's Inspector for wiring dependencies.
+
+- NEVER let the UI layer import from the Experiments namespace.
+  UI communicates only through IExperimentRunner and IMetricProvider.
+
+- NEVER hardcode experiment names, settings, or thresholds.
+  Use ScriptableObjects or constants in a dedicated Config class.
+
+- ALWAYS implement Teardown() even if it does nothing.
+  It must restore any Unity state modified by Setup() or Run().
+  Use try/finally in the runner to guarantee Teardown is called.
+
+- ALWAYS save state before modifying it in an experiment.
+  Example: save XRSettings.renderViewportScale before changing it.
+
+- NEVER read metrics inside an experiment class.
+  Experiments modify state. Metrics are read by the Metrics layer.
+
+---
+
+## NAMING CONVENTIONS
+
+Classes:
+  - Experiments:  [Name]Experiment         → RenderScaleExperiment
+  - Metrics:      [Name]MetricProvider      → UnityStatsMetricProvider
+  - Data models:  [Name]Metrics / [Name]Result
+  - Interfaces:   I[Name]                   → IExperiment, IExperimentRunner
+  - UI:           [Name]Panel / [Name]Controller
+
+Files:
+  - One class per file, filename matches class name exactly.
+  - Interfaces live in Core/Interfaces/
+  - Experiments live in Experiments/
+  - Metrics live in Metrics/
+  - UI scripts live in UI/
+
+Namespaces:
+  - XRLab.Core
+  - XRLab.Experiments
+  - XRLab.Metrics
+  - XRLab.UI
+
+---
+
+## C# CODE STYLE
+
+- Use C# 9+ features where Unity version allows (records, pattern matching).
+- Prefer readonly fields and immutable data models for metrics results.
+- Use sealed on experiment classes unless explicitly designed for inheritance.
+- Async/await is allowed in ExperimentRunner for frame-delayed operations.
+  Use UniTask if added to the project; otherwise use IEnumerator coroutines.
+- Do not use Resources.Load<>() — use direct references or Addressables.
+- Avoid LINQ in hot paths (per-frame Update, metric sampling). It allocates.
+- Always use string.IsNullOrEmpty() over == null on strings.
+- XML documentation is required on all public interfaces and public methods.
+
+---
+
+## UNITY-SPECIFIC RULES
+
+- Never call Physics, Renderer, or Quality API changes from a non-main thread.
+- XRSettings changes must happen on the main thread; schedule via dispatcher if async.
+- Profile with Unity Profiler Recorder API (ProfilerRecorder), not Time.deltaTime alone.
+  Time.deltaTime measures frame time including vsync stall — not pure CPU cost.
+- GPU metrics require ProfilerRecorder with "GPU Frame Time" stat name.
+- For Quest builds: IL2CPP + ARM64 only. Never build with Mono for device profiling.
+- Avoid Camera.main in hot paths — cache it on Awake.
+- Use [SerializeField] over public fields on MonoBehaviours.
+- Tag Bootstrap and persistent managers with [DefaultExecutionOrder(-100)].
+
+---
+
+## EXPERIMENT CHECKLIST
+
+When creating a new experiment, it MUST:
+  [ ] Implement IExperiment (Name, Setup, Run, Teardown)
+  [ ] Save original state in a private field during Setup()
+  [ ] Restore original state in Teardown() (inside try/finally at call site)
+  [ ] Modify only ONE performance variable
+  [ ] Be registered in Bootstrap (not auto-discovered via reflection)
+  [ ] Have an XML doc comment explaining what variable it tests
+  [ ] Work in Unity Editor (use mock/editor fallback if XR not present)
+
+---
+
+## METRICS CHECKLIST
+
+When creating a new metric provider, it MUST:
+  [ ] Implement IMetricProvider
+  [ ] Return a PerformanceMetrics value object (immutable)
+  [ ] Handle null/unavailable stats gracefully (return 0, not throw)
+  [ ] Be safe to call every frame from Update()
+  [ ] Dispose of any ProfilerRecorder in OnDestroy
+
+---
+
+## GIT CONVENTIONS
+
+Branch naming:
+  - feature/[name]     → feature/msaa-experiment
+  - fix/[name]         → fix/teardown-null-ref
+  - docs/[name]        → docs/architecture-update
+  - refactor/[name]    → refactor/metrics-layer
+
+Commit messages:
+  - Format: [scope]: short description
+  - Scopes: core | experiment | metrics | ui | docs | ci | refactor | fix
+  - Examples:
+      experiment: add MSAAExperiment with 4 quality levels
+      metrics: add GPU frame time via ProfilerRecorder
+      ui: add experiment control panel with run/stop buttons
+      docs: update ARCHITECTURE.md with metrics flow diagram
+  - Keep subject line under 72 characters.
+  - Reference issue/task in body if applicable.
+
+Do NOT commit:
+  - Unity Library/ folder
+  - .DS_Store, Thumbs.db
+  - Build output folders
+  - Any file with hardcoded device paths or API keys
+
+---
+
+## PORTFOLIO NOTES
+
+This project is reviewed by technical evaluators. Code should demonstrate:
+  - Clean architecture and SOLID principles
+  - XR domain knowledge (not just generic Unity code)
+  - Professional documentation and commit hygiene
+  - Systematic approach to performance measurement
+
+When writing code: imagine a senior XR engineer at a studio is reading it.
+Every design decision should be defensible.
