@@ -34,9 +34,12 @@ namespace XRPerformanceLab.Core
 
         [Header("Shadow Experiment Configuration")]
         [SerializeField] private float[] shadowDistanceValues = { 0f, 50f, 100f, 150f };
+        
+        [Header("Transparency Experiment Configuration")]
+        [SerializeField] private GameObject[] transparentObjects;
 
-    [Header("Experiment Hold Duration")]
-    [SerializeField] private float holdDuration = 3f;
+        [Header("Experiment Hold Duration")]
+        [SerializeField] private float holdDuration = 3f;
 
         public IExperimentRunner Runner { get; private set; }
         public List<IExperiment> AllExperiments { get; private set; }
