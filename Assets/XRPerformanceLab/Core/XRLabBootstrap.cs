@@ -35,8 +35,8 @@ namespace XRPerformanceLab.Core
         [Header("Shadow Experiment Configuration")]
         [SerializeField] private float[] shadowDistanceValues = { 0f, 50f, 100f, 150f };
 
-        [Header("Transparency Experiment Configuration")]
-        [SerializeField] private GameObject[] transparentObjects;
+    [Header("Experiment Hold Duration")]
+    [SerializeField] private float holdDuration = 3f;
 
         public IExperimentRunner Runner { get; private set; }
         public List<IExperiment> AllExperiments { get; private set; }
@@ -45,12 +45,21 @@ namespace XRPerformanceLab.Core
         {
             DontDestroyOnLoad(gameObject);
 
-            Runner = new ExperimentRunner();
+            // Create or get ExperimentRunner component on this GameObject
+            Runner = GetComponent<ExperimentRunner>();
+            if (Runner == null)
+            {
+                Runner = gameObject.AddComponent<ExperimentRunner>();
+            }
+
+            // Configure hold duration
+            Runner.HoldDuration = holdDuration;
+
             AllExperiments = new List<IExperiment>();
 
             RegisterExperiments();
 
-            Debug.Log($"[XRLabBootstrap] Initialized with {AllExperiments.Count} experiments.");
+            Debug.Log($"[XRLabBootstrap] Initialized with {AllExperiments.Count} experiments (Hold Duration: {holdDuration:F1}s).");
         }
 
         private void RegisterExperiments()
@@ -127,7 +136,7 @@ namespace XRPerformanceLab.Core
         }
 
         /// <summary>
-        /// Finds an experiment by its ID and runs it through the ExperimentRunner.
+        /// Finds an experiment by its ID and runs it through the ExperimentRunner as a coroutine.
         /// </summary>
         /// <param name="experimentId">The unique identifier of the experiment to run.</param>
         public void RunExperiment(string experimentId)
@@ -146,7 +155,7 @@ namespace XRPerformanceLab.Core
                 return;
             }
 
-            Runner.RunExperiment(experiment);
+            StartCoroutine(Runner.RunExperimentRoutine(experiment));
         }
 
         /// <summary>

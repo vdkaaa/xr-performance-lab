@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Linq;
 using UnityEngine;
 using XRPerformanceLab.Core.Interfaces;
 
@@ -20,6 +21,7 @@ namespace XRPerformanceLab.Core.Utilities
         private IExperiment[] _experiments;
         private int _selectedExperimentIndex = -1;
         private string _currentRunningExperiment = "Idle";
+        private float _holdTimeRemaining = 0f;
         private Vector2 _scrollPosition;
 
         private const float PanelWidth = 280f;
@@ -27,7 +29,7 @@ namespace XRPerformanceLab.Core.Utilities
 
         private void Start()
         {
-            _bootstrap = FindObjectOfType<XRLabBootstrap>();
+            _bootstrap = FindFirstObjectByType<XRLabBootstrap>();
 
             if (_bootstrap == null)
             {
@@ -55,6 +57,15 @@ namespace XRPerformanceLab.Core.Utilities
             }
         }
 
+        private void Update()
+        {
+            // Decrement hold time remaining during experiment execution
+            if (_runner != null && _runner.IsRunning && _holdTimeRemaining > 0f)
+            {
+                _holdTimeRemaining -= Time.deltaTime;
+            }
+        }
+
         private void OnExperimentCompleted(string experimentId)
         {
             var experiment = System.Array.Find(_experiments, e => e.Id == experimentId);
@@ -64,6 +75,7 @@ namespace XRPerformanceLab.Core.Utilities
             }
 
             _currentRunningExperiment = "Idle";
+            _holdTimeRemaining = 0f;
         }
 
         private void OnGUI()
@@ -83,9 +95,22 @@ namespace XRPerformanceLab.Core.Utilities
             GUILayout.Space(5);
 
             // Status
-            string statusText = _runner != null && _runner.IsRunning
-                ? $"Running: {_currentRunningExperiment}"
-                : "Status: Idle";
+            string statusText;
+            if (_runner != null && _runner.IsRunning)
+            {
+                if (_holdTimeRemaining > 0f)
+                {
+                    statusText = $"Running: {_currentRunningExperiment}\n({_holdTimeRemaining:F1}s remaining)";
+                }
+                else
+                {
+                    statusText = $"Running: {_currentRunningExperiment}";
+                }
+            }
+            else
+            {
+                statusText = "Status: Idle";
+            }
             GUILayout.Label(statusText);
             GUILayout.Space(5);
 
@@ -144,10 +169,11 @@ namespace XRPerformanceLab.Core.Utilities
 
             var experiment = _experiments[_selectedExperimentIndex];
             _currentRunningExperiment = experiment.DisplayName;
+            _holdTimeRemaining = _runner.HoldDuration;
 
             Debug.Log($"[PlayModeValidator] Starting experiment: {experiment.DisplayName} (ID: {experiment.Id})");
 
-            _runner.RunExperiment(experiment);
+            _bootstrap.StartCoroutine(_runner.RunExperimentRoutine(experiment));
         }
     }
 }
