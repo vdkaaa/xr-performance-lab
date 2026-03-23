@@ -41,7 +41,7 @@ namespace XRPerformanceLab.UI.Panels
             }
 
             _registry = new ExperimentRegistry();
-            _runner = new ExperimentRunner(_registry);
+            //_runner = new ExperimentRunner(_registry);
 
             RegisterExperiments();
             BindButtons();
@@ -79,25 +79,25 @@ namespace XRPerformanceLab.UI.Panels
 
         private void OnRenderScaleActivated()
         {
-            _runner.Activate(RenderScaleExperimentId);
+            //_runner.Activate(RenderScaleExperimentId);
             controlView.SetStatus($"Activated: {RenderScaleExperimentId}");
         }
 
         private void OnRenderScaleDeactivated()
         {
-            _runner.Deactivate(RenderScaleExperimentId);
+            //_runner.Deactivate(RenderScaleExperimentId);
             controlView.SetStatus($"Deactivated: {RenderScaleExperimentId}");
         }
 
         private void OnShadowsDisabled()
         {
-            _runner.Activate(ShadowExperimentId);
+            //_runner.Activate(ShadowExperimentId);
             controlView.SetStatus($"Activated: {ShadowExperimentId}");
         }
 
         private void OnShadowsRestored()
         {
-            _runner.Deactivate(ShadowExperimentId);
+            //_runner.Deactivate(ShadowExperimentId);
             controlView.SetStatus($"Deactivated: {ShadowExperimentId}");
         }
 
@@ -111,7 +111,7 @@ namespace XRPerformanceLab.UI.Panels
                 controlView.ShadowsRestoreButton.onClick.RemoveListener(OnShadowsRestored);
             }
 
-            _runner?.DeactivateAll();
+            //_runner?.DeactivateAll();
         }
     }
 }
